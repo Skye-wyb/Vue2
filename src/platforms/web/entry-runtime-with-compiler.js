@@ -1,101 +1,117 @@
 /* @flow */
 
-import config from 'core/config'
-import { warn, cached } from 'core/util/index'
-import { mark, measure } from 'core/util/perf'
+import config from "core/config";
+import { warn, cached } from "core/util/index";
+import { mark, measure } from "core/util/perf";
 
-import Vue from './runtime/index'
-import { query } from './util/index'
-import { compileToFunctions } from './compiler/index'
-import { shouldDecodeNewlines, shouldDecodeNewlinesForHref } from './util/compat'
+// 导入运行时的Vue
+import Vue from "./runtime/index";
+import { query } from "./util/index";
+// 从./complier/index.js文件导入compileToFunctions
+import { compileToFunctions } from "./compiler/index";
+import {
+  shouldDecodeNewlines,
+  shouldDecodeNewlinesForHref,
+} from "./util/compat";
 
-const idToTemplate = cached(id => {
-  const el = query(id)
-  return el && el.innerHTML
-})
+// 根据id获取元素的innerHTML
+const idToTemplate = cached((id) => {
+  const el = query(id);
+  return el && el.innerHTML;
+});
 
-const mount = Vue.prototype.$mount
+// 使用mount变量缓存Vue.prototype.$mount方法
+const mount = Vue.prototype.$mount;
+// 重写Vue.prototype.$mount方法
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
-  el = el && query(el)
+  el = el && query(el);
 
   /* istanbul ignore if */
   if (el === document.body || el === document.documentElement) {
-    process.env.NODE_ENV !== 'production' && warn(
-      `Do not mount Vue to <html> or <body> - mount to normal elements instead.`
-    )
-    return this
+    process.env.NODE_ENV !== "production" &&
+      warn(
+        `Do not mount Vue to <html> or <body> - mount to normal elements instead.`
+      );
+    return this;
   }
 
-  const options = this.$options
+  const options = this.$options;
   // resolve template/el and convert to render function
   if (!options.render) {
-    let template = options.template
+    let template = options.template;
     if (template) {
-      if (typeof template === 'string') {
-        if (template.charAt(0) === '#') {
-          template = idToTemplate(template)
+      if (typeof template === "string") {
+        if (template.charAt(0) === "#") {
+          template = idToTemplate(template);
           /* istanbul ignore if */
-          if (process.env.NODE_ENV !== 'production' && !template) {
+          if (process.env.NODE_ENV !== "production" && !template) {
             warn(
               `Template element not found or is empty: ${options.template}`,
               this
-            )
+            );
           }
         }
       } else if (template.nodeType) {
-        template = template.innerHTML
+        template = template.innerHTML;
       } else {
-        if (process.env.NODE_ENV !== 'production') {
-          warn('invalid template option:' + template, this)
+        if (process.env.NODE_ENV !== "production") {
+          warn("invalid template option:" + template, this);
         }
-        return this
+        return this;
       }
     } else if (el) {
-      template = getOuterHTML(el)
+      template = getOuterHTML(el);
     }
     if (template) {
       /* istanbul ignore if */
-      if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
-        mark('compile')
+      if (process.env.NODE_ENV !== "production" && config.performance && mark) {
+        mark("compile");
       }
 
-      const { render, staticRenderFns } = compileToFunctions(template, {
-        outputSourceRange: process.env.NODE_ENV !== 'production',
-        shouldDecodeNewlines,
-        shouldDecodeNewlinesForHref,
-        delimiters: options.delimiters,
-        comments: options.comments
-      }, this)
-      options.render = render
-      options.staticRenderFns = staticRenderFns
+      const { render, staticRenderFns } = compileToFunctions(
+        template,
+        {
+          outputSourceRange: process.env.NODE_ENV !== "production",
+          shouldDecodeNewlines,
+          shouldDecodeNewlinesForHref,
+          delimiters: options.delimiters,
+          comments: options.comments,
+        },
+        this
+      );
+      options.render = render;
+      options.staticRenderFns = staticRenderFns;
 
       /* istanbul ignore if */
-      if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
-        mark('compile end')
-        measure(`vue ${this._name} compile`, 'compile', 'compile end')
+      if (process.env.NODE_ENV !== "production" && config.performance && mark) {
+        mark("compile end");
+        measure(`vue ${this._name} compile`, "compile", "compile end");
       }
     }
   }
-  return mount.call(this, el, hydrating)
-}
+  return mount.call(this, el, hydrating);
+};
 
 /**
  * Get outerHTML of elements, taking care
  * of SVG elements in IE as well.
+ * 获取元素的outerHTML
  */
-function getOuterHTML (el: Element): string {
+function getOuterHTML(el: Element): string {
   if (el.outerHTML) {
-    return el.outerHTML
+    return el.outerHTML;
   } else {
-    const container = document.createElement('div')
-    container.appendChild(el.cloneNode(true))
-    return container.innerHTML
+    const container = document.createElement("div");
+    container.appendChild(el.cloneNode(true));
+    return container.innerHTML;
   }
 }
 
-Vue.compile = compileToFunctions
+// 在Vue上添加一个全局API `Vue.compile` 其值为上面导入的compileToFunctions
+Vue.compile = compileToFunctions;
 
-export default Vue
+// 导出Vue
+export default Vue;
