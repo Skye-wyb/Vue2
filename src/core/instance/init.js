@@ -41,7 +41,17 @@ export function initMixin(Vue: Class<Component>) {
       // 在Vue实例身上添加了$options属性，用于当前Vue的初始化（__init()）
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
+        // options是：Vue构造函数的透传进来的选项
+        /**
+         * {
+         *    el:'#app',
+         *    data:{
+         *      test:1     
+         *    }
+         * }
+         */
         options || {},
+        // vm是Vue实例对象
         vm
       );
     }
@@ -97,6 +107,7 @@ export function initInternalComponent(
   }
 }
 
+// 此函数的作用永远都是用来获取当前实例构造者的options属性，返回的永远是options
 export function resolveConstructorOptions(Ctor: Class<Component>) {
   // 传进来的参数（例子：vm.constructor，Vue构造函数）（若使用Vue.extend创建一个子类并使用子类创造实例时，那么vm.constructor就不是Vue构造函数，而是子类）
   // 所以options = Ctor.options = Vue.options
@@ -109,6 +120,7 @@ export function resolveConstructorOptions(Ctor: Class<Component>) {
       // need to resolve new options.
       Ctor.superOptions = superOptions;
       // check if there are any late-modified/attached options (#4976)
+      // 检查是否有任何后期修改/附加的选项，用来解决使用 vue-hot-reload-api 或者 vue-loader 时产生的一个 bug 的。
       const modifiedOptions = resolveModifiedOptions(Ctor);
       // update base extend options
       if (modifiedOptions) {
