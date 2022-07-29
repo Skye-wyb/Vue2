@@ -57,8 +57,10 @@ export function initMixin(Vue: Class<Component>) {
     }
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== "production") {
+      // initProxy函数作用也是在非生产环境下为vm添加_renderProxy属性
       initProxy(vm);
     } else {
+      // 在实例对象vm上添加_renderProxy属性
       vm._renderProxy = vm;
     }
     // expose real self
@@ -66,6 +68,7 @@ export function initMixin(Vue: Class<Component>) {
     initLifecycle(vm);
     initEvents(vm);
     initRender(vm);
+    // callHook函数的作用是:调用生命周期钩子函数
     callHook(vm, "beforeCreate");
     initInjections(vm); // resolve injections before data/props
     initState(vm);

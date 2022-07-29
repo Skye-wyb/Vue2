@@ -36,6 +36,12 @@ const sharedPropertyDefinition = {
   set: noop,
 };
 
+/**
+ * 
+ * @param {*目标对象} target 
+ * @param {*} sourceKey 
+ * @param {*} key 
+ */
 export function proxy(target: Object, sourceKey: string, key: string) {
   sharedPropertyDefinition.get = function proxyGetter() {
     return this[sourceKey][key];
@@ -47,16 +53,22 @@ export function proxy(target: Object, sourceKey: string, key: string) {
 }
 
 export function initState(vm: Component) {
+  // 在vm实例身上添加一个属性_watchers,是一个数组,用于存储所有组件实例的watcher对象
   vm._watchers = [];
   const opts = vm.$options;
+  // 有props则初始化props选项
   if (opts.props) initProps(vm, opts.props);
+  // 有methods则初始化methods选项
   if (opts.methods) initMethods(vm, opts.methods);
   if (opts.data) {
+    // 初始化data选项
     initData(vm);
   } else {
+    // 没有data则直接调用observe观测一个空对象{},并且vm._data引用了该空对象
     observe((vm._data = {}), true /* asRootData */);
   }
   if (opts.computed) initComputed(vm, opts.computed);
+  // 判断是否存在watch并且判断watch是否是原生的watch对象(火狐提供了原生的Object.prototype.watch函数)
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch);
   }
@@ -114,8 +126,13 @@ function initProps(vm: Component, propsOptions: Object) {
 
 function initData(vm: Component) {
   let data = vm.$options.data;
+  /**
+   * 注意点:此时的data是经过了mergeOptions函数处理的,此时应已经是函数的形式,但是由于beforeCreated钩子函数是在mergeOptions函数之后,initData之前调用的;
+   * 如果在beforeCreated生命周期钩子函数中修改了vm.$options.data的值,所以此时在initData中对v,.$options.data类型的判断是必要的
+   */
+  // getData()函数用于获取真正的数据
   data = vm._data = typeof data === "function" ? getData(data, vm) : data || {};
-  if (!isPlainObject(data)) {
+  if (!isPlainObject(data)) { // 判断data是否为一个纯对象
     data = {};
     process.env.NODE_ENV !== "production" &&
       warn(
@@ -133,12 +150,16 @@ function initData(vm: Component) {
     const key = keys[i];
     if (process.env.NODE_ENV !== "production") {
       if (methods && hasOwn(methods, key)) {
+        // 不允许methods和data中出现同名
         warn(
           `Method "${key}" has already been defined as a data property.`,
           vm
         );
       }
     }
+    /**
+     * 优先级:props>methods>data
+     */
     if (props && hasOwn(props, key)) {
       process.env.NODE_ENV !== "production" &&
         warn(
@@ -146,21 +167,31 @@ function initData(vm: Component) {
             `Use prop default value instead.`,
           vm
         );
-    } else if (!isReserved(key)) {
+    } else if (!isReserved(key)) { // 判断定义在data中的key是否是保留键
+      // 实现实例对象的代理访问
       proxy(vm, `_data`, key);
     }
   }
   // observe data
+  // 调用observe函数观测数据
   observe(data, true /* asRootData */);
 }
 
+/**
+ * 
+ * @param {data选项,是一个函数} data 
+ * @param {Vue实例对象} vm 
+ * @returns  {getData函数的作用:调用data函数获取真正的数据对象并返回}
+ * 
+ */
 export function getData(data: Function, vm: Component): any {
   // #7573 disable dep collection when invoking data getters
-  pushTarget();
+  pushTarget(); // 防止使用 props 数据初始化 data 数据时收集冗余的依赖
   try {
     return data.call(vm, vm);
   } catch (e) {
     handleError(e, vm, `data()`);
+    // 捕获错误
     return {};
   } finally {
     popTarget();

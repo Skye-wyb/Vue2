@@ -209,7 +209,7 @@ function mergeAssets(
   const res = Object.create(parentVal || null);
   if (childVal) {
     process.env.NODE_ENV !== "production" &&
-    // 检测childVal是不是一个纯对象
+      // 检测childVal是不是一个纯对象
       assertObjectType(key, childVal, vm);
     // 使用extend函数将childVal上的属性混合到res对象上并返回
     return extend(res, childVal);
@@ -263,10 +263,10 @@ strats.watch = function (
       parent = [parent];
     }
     ret[key] = parent
-    // 如果parent存在，此时的parent是数组，直接concat child
-      ? parent.concat(child)
-      // 如果parent不存在，则将child转为数组返回
-      : Array.isArray(child)
+      ? // 如果parent存在，此时的parent是数组，直接concat child
+        parent.concat(child)
+      : // 如果parent不存在，则将child转为数组返回
+      Array.isArray(child)
       ? child
       : [child];
   }

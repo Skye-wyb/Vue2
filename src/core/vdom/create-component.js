@@ -46,6 +46,7 @@ const componentVNodeHooks = {
     } else {
       const child = vnode.componentInstance = createComponentInstanceForVnode(
         vnode,
+        // 被调用时是相当于:$parent
         activeInstance
       )
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)

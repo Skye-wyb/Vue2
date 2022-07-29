@@ -41,6 +41,7 @@ export function invokeWithErrorHandling (
   info: string
 ) {
   let res
+  // 执行生命周期钩子函数
   try {
     res = args ? handler.apply(context, args) : handler.call(context)
     if (res && !res._isVue && isPromise(res) && !res._handled) {

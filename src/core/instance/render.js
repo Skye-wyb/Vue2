@@ -17,6 +17,7 @@ import VNode, { createEmptyVNode } from "../vdom/vnode";
 import { isUpdatingChildComponent } from "./lifecycle";
 
 export function initRender(vm: Component) {
+  // 在vm实例对象上添加两个实例属性
   vm._vnode = null; // the root of the child tree
   vm._staticTrees = null; // v-once cached trees
   const options = vm.$options;
@@ -28,22 +29,30 @@ export function initRender(vm: Component) {
   // so that we get proper render context inside it.
   // args order: tag, data, children, normalizationType, alwaysNormalize
   // internal version is used by render functions compiled from templates
+  // 在vm实例对象上添加了两个方法:vm._c和vm.$createElement
+  // vm._c:用于编译器根据模板字符串生成的渲染函数的
   vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false);
   // normalization is always applied for the public version, used in
   // user-written render functions.
   vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true);
+  /**
+   * vm._c和vm.$createElement的区别在于调用createElement函数时传递的第六个参数不同.
+   */
 
   // $attrs & $listeners are exposed for easier HOC creation.
   // they need to be reactive so that HOCs using them are always updated
   const parentData = parentVnode && parentVnode.data;
 
   /* istanbul ignore else */
+  // 这段代码的主要作用:用于在vm上定义两个属性
   if (process.env.NODE_ENV !== "production") {
+    // defineReactive函数:为一个对象定义响应式的属性,则$attrs以及$listener这两个属性是响应式的
     defineReactive(
       vm,
       "$attrs",
       (parentData && parentData.attrs) || emptyObject,
       () => {
+        // 非生产环境下该属性是只读的,不允许修改,修改会警告
         !isUpdatingChildComponent && warn(`$attrs is readonly.`, vm);
       },
       true
@@ -53,6 +62,7 @@ export function initRender(vm: Component) {
       "$listeners",
       options._parentListeners || emptyObject,
       () => {
+        // 非生产环境下该属性是只读的,不允许修改,修改会警告
         !isUpdatingChildComponent && warn(`$listeners is readonly.`, vm);
       },
       true

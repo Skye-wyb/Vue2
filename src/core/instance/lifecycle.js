@@ -19,6 +19,12 @@ import {
 } from "../util/index";
 
 export let activeInstance: any = null;
+/**
+ *  isUpdatingChildComponent 初始值为 false，只有当 updateChildComponent 函数开始执行的时候会被更新为 true，
+ *  当 updateChildComponent 执行结束时又将 isUpdatingChildComponent 的值还原为 false，
+ *  这是因为 updateChildComponent 函数需要更新实例对象的 $attrs 和 $listeners 属性，
+ *  所以此时是不需要提示 $attrs 和 $listeners 是只读属性的。
+ */
 export let isUpdatingChildComponent: boolean = false;
 
 export function setActiveInstance(vm: Component) {
@@ -30,18 +36,25 @@ export function setActiveInstance(vm: Component) {
 }
 
 export function initLifecycle(vm: Component) {
+  // 定义 options，它是 vm.$options 的引用,vm.$options是当前Vue实例的初始化选项
   const options = vm.$options;
 
   // locate first non-abstract parent
+  // 定义parent,引用当前实例的父实例
   let parent = options.parent;
+  // 如果当前实例有父组件,且当前实例不是抽象的
   if (parent && !options.abstract) {
+    // 使用while循环查找第一个非抽象的父组件
     while (parent.$options.abstract && parent.$parent) {
       parent = parent.$parent;
     }
+    // 此时parent是一个非抽象的组件,将它当作当前实例的父级,将当前实例vm添加到父级的$children属性中
     parent.$children.push(vm);
   }
 
+  // 设置当前实例的$parent属性,指向父级
   vm.$parent = parent;
+  // 设置$root属性,有父级就是父级的$root,否则$root指向vm自身
   vm.$root = parent ? parent.$root : vm;
 
   vm.$children = [];
@@ -345,9 +358,16 @@ export function deactivateChildComponent(vm: Component, direct?: boolean) {
   }
 }
 
+/**
+ * 
+ * @param {*实例对象} vm 
+ * @param {*要调用的生命周期钩子函数} hook 
+ */
 export function callHook(vm: Component, hook: string) {
   // #7573 disable dep collection when invoking lifecycle hooks
+  // 以pushTarget()开头和以popTarget()结尾的目的:为了避免在某些生命周期钩子函数中使用props数据导致收集冗余的依赖
   pushTarget();
+  // 获取要调用的生命周期钩子函数,handles是数组的形式
   const handlers = vm.$options[hook];
   const info = `${hook} hook`;
   if (handlers) {

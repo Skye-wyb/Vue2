@@ -10,6 +10,11 @@ export const unicodeRegExp = /a-zA-Z\u00B7\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u037
 /**
  * Check if a string starts with $ or _
  */
+/**
+ * 
+ * @param {*key(键)} str 
+ * @returns {判断key是否是保留键,通过判断一个字符串的第一个字符是不是$或_来决定是否是保留的}
+ */
 export function isReserved (str: string): boolean {
   const c = (str + '').charCodeAt(0)
   return c === 0x24 || c === 0x5F
@@ -18,6 +23,7 @@ export function isReserved (str: string): boolean {
 /**
  * Define a property.
  */
+// ? 是对Object.definedProperty函数的简单封装,可以定义不可枚举的属性
 export function def (obj: Object, key: string, val: any, enumerable?: boolean) {
   Object.defineProperty(obj, key, {
     value: val,
