@@ -9,6 +9,7 @@ export * from './element'
 /**
  * Query an element selector if it's not an element already.
  */
+// ! 用于根据给定的参数在DOM中查找对应的元素并返回
 export function query (el: string | Element): Element {
   if (typeof el === 'string') {
     const selected = document.querySelector(el)

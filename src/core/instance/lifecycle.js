@@ -80,6 +80,7 @@ export function lifecycleMixin(Vue: Class<Component>) {
     // based on the rendering backend used.
     if (!prevVnode) {
       // initial render
+      // ? vm.$el原本赋值为el，但它会被vm.__patch__函数的返回值重写
       vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */);
     } else {
       // updates
@@ -152,11 +153,19 @@ export function lifecycleMixin(Vue: Class<Component>) {
   };
 }
 
+/**
+ * 
+ * @param {* 组件实例vm} vm 
+ * @param {* 挂载元素el} el 
+ * @param {* } hydrating 
+ * @returns 
+ */
 export function mountComponent(
   vm: Component,
   el: ?Element,
   hydrating?: boolean
 ): Component {
+  // * vm上添加$el属性值为el元素
   vm.$el = el;
   if (!vm.$options.render) {
     vm.$options.render = createEmptyVNode;

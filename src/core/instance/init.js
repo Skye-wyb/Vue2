@@ -81,7 +81,7 @@ export function initMixin(Vue: Class<Component>) {
       mark(endTag);
       measure(`vue ${vm._name} init`, startTag, endTag);
     }
-
+    // * 假设此时已经完成了所有的初始化工作
     if (vm.$options.el) {
       vm.$mount(vm.$options.el);
     }

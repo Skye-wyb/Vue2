@@ -67,6 +67,7 @@ export function initGlobalAPI(Vue: GlobalAPI) {
     ] 
   */
   }
+  {/* //?给Vue.options上添加三个属性：components、directives、filters，都是一个空对象 */}
   ASSET_TYPES.forEach((type) => {
     Vue.options[type + "s"] = Object.create(null);
   });
@@ -76,16 +77,16 @@ export function initGlobalAPI(Vue: GlobalAPI) {
 
   Vue.options._base = Vue;
   {
-    /* 上述代码执行后，Vue.options变为以下形式：Vue.options = {
-  components: Object.create(null),
-  directives: Object.create(null),
-  filters: Object.create(null),
-  _base: Vue
+    /* 上述代码执行后，Vue.options变为以下形式：//* Vue.options = {
+  //* components: Object.create(null),
+  //* directives: Object.create(null),
+  //* filters: Object.create(null),
+  //* _base: Vue
 } */
   }
 
   {
-    /* 将 builtInComponents对象身上的属性混合到Vue.options.components对象身上 
+    /* //todo 将 builtInComponents对象身上的属性混合到Vue.options.components对象身上 
     export function extend (to: Object, _from: ?Object): Object {
       for (const key in _from) {
         to[key] = _from[key]
@@ -96,10 +97,10 @@ export function initGlobalAPI(Vue: GlobalAPI) {
   }
   extend(Vue.options.components, builtInComponents);
   {
-    /* Vue.options.components对象为：
-  Vue.options.components = {
-    KeepAlive
-  }
+    /* // !Vue.options.components对象为：
+  ! Vue.options.components = {
+  !   KeepAlive
+  ! }
   */
   }
   {

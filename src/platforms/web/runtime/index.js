@@ -47,11 +47,19 @@ Vue.prototype.__patch__ = inBrowser ? patch : noop;
 
 // public mount method
 // 添加$mount方法
+/**
+ * 
+ * @param {* 可以是一个字符串也可以是一个DOM元素} el 
+ * @param {* 用于Virtual DOM的补丁算法} hydrating 
+ * @returns 
+ */
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
+  // ? 判断是否为浏览器环境；query函数：用于根据给定的参数在DOM中查找对应的元素并返回  document.querySelector(el)实现
   el = el && inBrowser ? query(el) : undefined;
+  // * 完成真正的挂载工作
   return mountComponent(this, el, hydrating);
 };
 

@@ -66,12 +66,21 @@ export class Observer {
     def(value, "__ob__", this);
     // 判断数据对象是一个数组还是一个纯对象
     // * 数据对象为数组
+    /**
+     * push pop shift unshift splice sort reverse
+     */
     if (Array.isArray(value)) {
+      // ? protoAugment和copyAugment函数的目的都是：把数组实例与代理原型或与代理原型中定义的函数联系起来，从而拦截数组变异方法
+      // ! hasProto是一个布尔值，用于检测当前环境是否可以使用__proto__属性
       if (hasProto) {
+        // ! value：数组实例  arrayMethods：代理原型
         protoAugment(value, arrayMethods);
       } else {
+        // 不支持__proto__属性
+        // todo arrayKeys：定义在arrayMethods对象上的所有函数的键，即所要拦截的数组变异方法的名称
         copyAugment(value, arrayMethods, arrayKeys);
       }
+      // * 数组中嵌套了数组或对象使用使用push等方法不是响应的，observeArray解决上述问题
       this.observeArray(value);
     } else {
       // * 数据对象为纯对象
@@ -97,6 +106,7 @@ export class Observer {
   /**
    * Observe a list of Array items.
    */
+  // ? 使数组中嵌套的数组或对象同样是响应式的数据，递归观测类型为数组或对象的数组元素
   observeArray(items: Array<any>) {
     for (let i = 0, l = items.length; i < l; i++) {
       observe(items[i]);
@@ -110,17 +120,25 @@ export class Observer {
  * Augment a target Object or Array by intercepting
  * the prototype chain using __proto__
  */
+// ! 设置target的__proto__属性，让其指向一个代理原型，从而做到拦截
 function protoAugment(target, src: Object) {
   /* eslint-disable no-proto */
   target.__proto__ = src;
   /* eslint-enable no-proto */
 }
 
+// ! protoAugment和copyAugment函数的目的都是：把数组实例与代理原型或与代理原型中定义的函数联系起来，从而拦截数组变异方法
 /**
  * Augment a target Object or Array by defining
  * hidden properties.
  */
 /* istanbul ignore next */
+/**
+ * 
+ * @param {*} target 
+ * @param {*} src 
+ * @param {*} keys  
+ */
 function copyAugment(target: Object, src: Object, keys: Array<string>) {
   for (let i = 0, l = keys.length; i < l; i++) {
     const key = keys[i];
@@ -211,6 +229,9 @@ export function defineReactive(
    * * !getter || setter
    * 
    */
+  // * 当没有传递第三个参数val，自然需要去obj上获取
+  // * 当属性拥有自己的getter时不会对其进行深度观测：
+  // * 原因（1）由于存在原来的getter时在深度观测之前不会取值，取不到属性值则无法进行深度观测 （2）若getter由用户自己定义，防止用户在getter中有意想不到的行为
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key];
   }
@@ -221,13 +242,19 @@ export function defineReactive(
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
+    /**
+     * * get函数的作用：正确的返回属性值以及收集依赖
+     * @returns 
+     */
     get: function reactiveGetter() {
       const value = getter ? getter.call(obj) : val;
-      if (Dep.target) {
+      if (Dep.target) { // ? Dep.target中保存的值就是要被收集的依赖（观察者），为true代表有依赖需要被收集，false代表无
+        // 收集依赖
         dep.depend();
         if (childOb) {
           childOb.dep.depend();
           if (Array.isArray(value)) {
+            // ? 数组元素为对象时，无法触发响应
             dependArray(value);
           }
         }
@@ -235,8 +262,11 @@ export function defineReactive(
       return value;
     },
     set: function reactiveSetter(newVal) {
+      // * set函数：当属性被修改时如何触发依赖
+      // * 2件事：正确的为属性设置新值，而能够触发相应的依赖
       const value = getter ? getter.call(obj) : val;
       /* eslint-disable no-self-compare */
+      // 存在新值、旧值都为NaN的情况，NaN自相反
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return;
       }
@@ -262,26 +292,43 @@ export function defineReactive(
  * triggers change notification if the property doesn't
  * already exist.
  */
+/**
+ * 
+ * @param {* 要被添加属性的对象} target 
+ * @param {* 要添加属性的键名} key 
+ * @param {* 要添加属性的值} val 
+ * @returns 
+ */
 export function set(target: Array<any> | Object, key: any, val: any): any {
   if (
     process.env.NODE_ENV !== "production" &&
+    /**
+     * ? isUndef：判断一个值是否是undefined或null
+     * ? isPrimitive：判断一个值是否是原始类型值
+     */
     (isUndef(target) || isPrimitive(target))
   ) {
+    // 理论上只能给对象添加属性（或只能给数组添加元素）
     warn(
       `Cannot set reactive property on undefined, null, or primitive value: ${(target: any)}`
     );
   }
+  // ! isvalidArrayIndex：用于判断给定变量的值是否为有效的数组索引
   if (Array.isArray(target) && isValidArrayIndex(key)) {
+    // 修改数组的长度
     target.length = Math.max(target.length, key);
     target.splice(key, 1, val);
     return val;
   }
-  if (key in target && !(key in Object.prototype)) {
+  // target不是数组是一个纯对象
+  if (key in target && !(key in Object.prototype)) {  // * 保证key在target对象上或target对象的原型链上，但同时不能在Object.prototype上
     target[key] = val;
     return val;
   }
+  // 定义了ob常量，是数据对象__ob__属性的引用
   const ob = (target: any).__ob__;
   if (target._isVue || (ob && ob.vmCount)) {
+    // * 不能满足(ob && ob.vmCount) ：代表不允许在根数据对象添加属性，因为永远触发不了依赖，因为根数据对象的Observer实例收集不到依赖
     process.env.NODE_ENV !== "production" &&
       warn(
         "Avoid adding reactive properties to a Vue instance or its root $data " +
@@ -293,7 +340,9 @@ export function set(target: Array<any> | Object, key: any, val: any): any {
     target[key] = val;
     return val;
   }
+  // ? 设置属性值，保证新添加的属性是响应式的
   defineReactive(ob.value, key, val);
+  // * 触发响应
   ob.dep.notify();
   return val;
 }
@@ -301,21 +350,31 @@ export function set(target: Array<any> | Object, key: any, val: any): any {
 /**
  * Delete a property and trigger change if necessary.
  */
+/**
+ * 
+ * @param {* 将要被删除属性的目标对象} target 
+ * @param {* 要删除属性的键名} key 
+ * @returns 
+ */
 export function del(target: Array<any> | Object, key: any) {
   if (
     process.env.NODE_ENV !== "production" &&
+    // 检测是不是undefined或null或是原始类型值
     (isUndef(target) || isPrimitive(target))
   ) {
     warn(
       `Cannot delete reactive property on undefined, null, or primitive value: ${(target: any)}`
     );
   }
+  // ? 数组类型且是有效的数组索引
   if (Array.isArray(target) && isValidArrayIndex(key)) {
+    // * 使用splice方法移除元素，可以触发响应
     target.splice(key, 1);
     return;
   }
   const ob = (target: any).__ob__;
   if (target._isVue || (ob && ob.vmCount)) {
+    // todo 不能满足(ob && ob.vmCount) ：代表不允许在根数据对象删除属性，因为永远触发不了依赖，因为根数据对象的Observer实例收集不到依赖
     process.env.NODE_ENV !== "production" &&
       warn(
         "Avoid deleting properties on a Vue instance or its root $data " +
@@ -323,10 +382,13 @@ export function del(target: Array<any> | Object, key: any) {
       );
     return;
   }
+  // todo 检测key是否为target对象自身拥有的属性
   if (!hasOwn(target, key)) {
     return;
   }
+  // ? 删除key
   delete target[key];
+  // todo 如果ob不存在则证明原本不是响应的直接返回，否则证明target对象是响应的要触发响应
   if (!ob) {
     return;
   }
@@ -340,8 +402,10 @@ export function del(target: Array<any> | Object, key: any) {
 function dependArray(value: Array<any>) {
   for (let e, i = 0, l = value.length; i < l; i++) {
     e = value[i];
+    // * 如果该元素值拥有ob对象和ob.dep对象，则说明该元素也是一个对象或数组，手动执行ob.dep.depend()达到收集依赖的目的
     e && e.__ob__ && e.__ob__.dep.depend();
     if (Array.isArray(e)) {
+      // * 若数组元素仍然是一个数组则继续递归
       dependArray(e);
     }
   }
